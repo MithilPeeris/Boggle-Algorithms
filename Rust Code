@@ -1,0 +1,86 @@
+#![allow(non_snake_case, non_camel_case_types, dead_code)]
+
+use std::collections::HashMap;
+
+fn boggle(board: &[&str], words: &Vec<String>) -> HashMap<String, Vec<(u8, u8)>> {
+    let mut found: HashMap<String, Vec<(u8, u8)>> = HashMap::new();
+
+    let map = dfsBoard(board);
+    for word in words {
+        if let Some(first_char) = word.chars().next() {
+            if let Some(coords) = map.get(&first_char) {
+                let len = word.len();
+                for coord in coords {
+                    let mut adding_list = Vec::new();
+                    let mut acc = Vec::new(); 
+                    acc.push(coord.clone());
+                    adding_list.append(&mut recursive_checker(*coord, &word[1..], &mut acc, len, &map));
+                    if len == adding_list.len()
+                    {
+                        found.insert(word.clone(), adding_list);
+                    }
+                }
+                
+            }
+        }
+    }
+    found
+}
+
+
+fn dfsBoard(board: &[&str]) -> HashMap<char, Vec<(u8, u8)>> {
+    let mut map: HashMap<char, Vec<(u8, u8)>> = HashMap::new();
+    for r in 0..board.len() {
+        for c in 0..board.len() {
+            let key = board[r as usize].chars().collect::<Vec<_>>()[c as usize];
+            map.entry(key)
+                .and_modify(|vec| vec.push((r as u8, c as u8)))
+                .or_insert_with(|| vec![(r as u8, c as u8)]);
+        }
+    }
+    map
+}
+
+fn recursive_checker(cord: (u8, u8), str_list: &str, acc: &mut Vec<(u8, u8)>, len: usize, board_map: &HashMap<char, Vec<(u8, u8)>>) -> Vec<(u8, u8)> {
+    if str_list.is_empty() {
+        acc.clone()
+    } else {
+        let next_cord = check_around(cord, str_list.chars().next().unwrap(), acc, board_map);
+        if next_cord.is_empty() {
+            acc.clone()
+        } else {
+            for &coordinates in &next_cord {
+                acc.push(coordinates);
+                let temp = recursive_checker(coordinates, &str_list[1..], acc, len, board_map);
+                let temp_len = temp.len();
+                if temp_len == len {
+                    *acc = temp;
+                    break;
+                }
+                acc.pop();
+            }
+            acc.clone()
+        }
+    }
+}
+
+
+fn check_around((x, y): (u8, u8), target_value: char, checked_blocks: &[(u8, u8)], board_map: &HashMap<char, Vec<(u8, u8)>>) -> Vec<(u8, u8)> {
+    // Use `and_then` to handle the case when the target value is not found in the map
+    board_map.get(&target_value).map_or_else(
+        || Vec::new(), // Return an empty vector if the target value is not found
+        |surrounding_blocks| {
+            // Use `filter` and `cloned` to create the unchecked blocks
+            surrounding_blocks.iter().filter(|(x2, y2)| {
+                ((x as isize) - (*x2 as isize)).abs() <= 1 &&
+                ((y as isize) - (*y2 as isize)).abs() <= 1 &&
+                !checked_blocks.contains(&(*x2, *y2))
+            }).cloned().collect()
+        }
+    )
+}
+
+
+#[cfg(test)]
+#[path = "tests.rs"]
+mod tests;
