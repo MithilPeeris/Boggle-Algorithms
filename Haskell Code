@@ -1,0 +1,60 @@
+module Boggle (boggle) where
+
+import Data.Array
+import qualified Data.Map.Strict as Map
+
+type Board = Array (Int, Int) Char
+type Position = (Int, Int)
+
+boggle :: [[Char]] -> [String] -> [(String, [Position])]
+boggle board words = 
+    let boardArray = listToBoardArray board
+        boardMap = dfsBoardHelper boardArray Map.empty 0 0 (n - 1)
+        n = length board
+        finalDic = foldr (\word acc -> 
+                            let temp = case Map.lookup (head word) boardMap of
+                                    Just result -> result
+                                    Nothing -> []
+                                acc2 = foldr (\tempValue acc' -> 
+                                                let lenstr = length word
+                                                    addingList = recursiveChecker tempValue (tail word) [tempValue] lenstr boardMap
+                                                in if null addingList 
+                                                    then acc' 
+                                                    else [(word, addingList)]) [] temp
+                            in acc2 ++ acc) [] words
+    in finalDic
+
+recursiveChecker :: Position -> String -> [Position] -> Int -> Map.Map Char [(Int, Int)] -> [Position]
+recursiveChecker _ [] acc _ _ = acc
+recursiveChecker cord (s:strList) acc len boardMap =
+    let nextCord = checkAround cord s acc boardMap
+    in if null nextCord
+       then []
+       else foldr (\foldrcord acc' -> 
+                    let temp = recursiveChecker foldrcord strList (acc ++ [foldrcord]) len boardMap
+                        temp_len = length temp
+                    in if temp_len == len 
+                        then temp
+                       else acc') [] nextCord
+
+dfsBoardHelper :: Board -> Map.Map Char [(Int, Int)] -> Int -> Int -> Int -> Map.Map Char [(Int, Int)]
+dfsBoardHelper board map r c len
+    | r > len = map
+    | c > len = dfsBoardHelper board map (r + 1) 0 len
+    | otherwise = 
+        let letter = indexTuple r c board
+            updatedMap = Map.insertWith (++) letter [(r, c)] map
+        in dfsBoardHelper board updatedMap r (c + 1) len
+
+indexTuple :: Int -> Int -> Board -> Char
+indexTuple r c board = board ! (r, c)
+
+checkAround :: Position -> Char -> [Position] -> Map.Map Char [(Int, Int)] -> [Position]
+checkAround (x, y) targetValue checkedBlocks boardMap =
+    let uncheckedBlocks = maybe [] filterBlocks $ Map.lookup targetValue boardMap
+        filterBlocks surroundingBlocks = filter (\(x', y') -> abs (x - x') <= 1 && abs (y - y') <= 1 && (x', y') `notElem` checkedBlocks) surroundingBlocks
+    in uncheckedBlocks
+
+listToBoardArray :: [[Char]] -> Board
+listToBoardArray board = listArray ((0, 0), (n - 1, n - 1)) $ concat board
+    where n = length board
