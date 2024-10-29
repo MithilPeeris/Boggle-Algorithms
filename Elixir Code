@@ -1,0 +1,102 @@
+defmodule Boggle do
+  import Map
+  
+  def boggle(board, words) do
+    final_dic = Enum.reduce(words, %{}, fn word, acc ->
+      str_list = String.codepoints(word)
+      temp = dfs_board(board, hd(str_list), nil)
+      acc2 = Enum.reduce(temp, %{}, fn temp_value, acc ->
+      adding_list = recursive_checker(board, temp_value, tl(str_list))
+      length_adding_list = length(adding_list)
+      if length_adding_list == length(str_list) and length_adding_list != nil do
+        Map.put(acc, word, adding_list)
+      else
+        acc
+      end
+      end)
+      acc = Map.merge(acc, acc2)
+    end)
+    final_dic
+  end
+  
+  def recursive_checker(_, nil, _) do
+    []
+  end
+
+  def recursive_checker(board, cord, str_list) do
+        recursive_checker(board, cord, str_list, [cord])
+  end
+
+  def recursive_checker(board, cord, [], acc) do
+    acc
+  end
+
+  def recursive_checker(board, cord, str_list, acc) do
+    next_cord = check_around(cord, hd(str_list), board, acc)
+
+    if next_cord == nil do
+      acc
+    else 
+      recursive_checker(board, next_cord, tl(str_list), acc ++ [next_cord])
+    end
+  end
+
+  def index_tuple(r, c, board) do
+    elem(elem(board, r), c)
+  end
+
+  def check_around(nil, _, _, _) do 
+    nil
+  end
+
+  def check_around({x, y}, target_value, board, checked_blocks) when is_integer(x) and is_integer(y) do
+    surrounding_blocks = [
+      {x - 1, y}, {x + 1, y},   # Left and right
+      {x, y - 1}, {x, y + 1},   # Up and down
+      {x - 1, y - 1}, {x - 1, y + 1},   # Diagonal top left and top right
+      {x + 1, y - 1}, {x + 1, y + 1}    # Diagonal bottom left and bottom right
+    ]
+    unchecked_blocks = Enum.reject(surrounding_blocks, fn {x, y} -> x >= tuple_size(board) or x < 0 or y < 0 or y >= tuple_size(board) end)
+    unchecked_blocks = Enum.reject(unchecked_blocks, &Enum.member?(checked_blocks, &1))
+    check = Enum.reduce(unchecked_blocks, nil, fn next_block, acc ->
+      if block_contains_value(next_block, target_value, board) do
+        next_block
+      else
+        acc
+      end
+    end)
+  end
+
+  defp block_contains_value({x, y}, target_value, board) when 0 <= x and x < tuple_size(board) and 0 <= y and y < tuple_size(board) do
+    if index_tuple(x, y, board) == target_value do
+      true
+    else
+      false
+    end
+  end
+
+  defp block_contains_value({x, y}, target_value, board) do
+    false
+  end
+
+  defp dfs_board(board, letter, acc) do
+    dfs_board(board, letter, [], 0, 0, tuple_size(board))
+  end
+
+  defp dfs_board(board, letter, acc, r, c, len) do
+
+    if r >= len do
+      acc  
+    else
+      if letter == index_tuple(r, c, board) do
+        dfs_board(board, letter, acc ++ [{r,c}], r + 1, 0, len)
+      else
+        if c >= len - 1 do
+          dfs_board(board, letter, acc, r + 1, 0, len) 
+        else
+          dfs_board(board, letter, acc, r, c + 1, len) 
+        end
+      end
+    end
+  end
+end
