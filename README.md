@@ -1,10 +1,9 @@
-The Boggle module implements a Boggle game solver in Elixir. The core function, boggle/2, takes a board (2D tuple) and a list of words, returning a map of words that can be constructed from the board, along with the list of their positions.
+Boggle defines a function to solve Boggle puzzles using efficient board traversal and recursive word search. The core function boggle takes a 2D list (the board) and a list of words, outputting a list of words found along with their coordinates on the board.
 
-Key parts:
-
-Word Search (boggle/2): Iterates over each word, converting it to a list of characters and initiating a depth-first search on the board. The search checks if each word can be formed by connecting adjacent letters.
-Depth-First Search (dfs_board): Finds the starting coordinates of the first letter in each word, then passes these to recursive_checker.
-Recursive Checker (recursive_checker/4): Checks if each remaining letter in the word sequence can be found by exploring neighboring cells, ensuring letters are not reused.
-Neighbor Check (check_around/4): Evaluates all adjacent cells to see if the next character matches, returning the next coordinate if a match is found.
-Helper Functions: Includes utility functions to check values in specific cells and manage recursion over the board.
-This solution supports finding multiple words with complex board traversal.
+Key Functions:
+boggle: Converts the board into an Array and builds a character-to-coordinates map using dfsBoardHelper. For each word, it checks if it can be constructed by finding connected characters on the board.
+dfsBoardHelper: Scans the board, mapping each character to its coordinates, optimizing lookups for starting positions of each letter.
+recursiveChecker: Recursively searches from a starting position to check if the subsequent letters in the word can be connected through valid adjacent positions, ensuring no position is reused within a single search.
+checkAround: Given a position, it filters neighboring coordinates to find matches for the next letter in the word, excluding previously visited blocks.
+listToBoardArray: Converts the board from a list of lists to an array for efficient indexing.
+The implementation leverages efficient data structures and recursion, allowing for generalized board sizes and word lists.
